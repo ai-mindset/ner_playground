@@ -97,7 +97,7 @@ The NER pipeline performs the following steps:
 
 ## Customisation
 
-You can customise the NER pipeline by modifying the custom patterns in `src/ner.main.py`. The default implementation includes patterns for programming languages and libraries.
+You can customise the NER pipeline by modifying the custom patterns in `src/ner/main.py`. The default implementation includes patterns for programming languages and libraries.
 
 ## Troubleshooting
 
@@ -112,4 +112,4 @@ If you encounter errors with spaCy model loading:
 
 ## Licence
 
-This project is licensed under the MIT Licence - see the LICENSE file for details.
+MIT 
