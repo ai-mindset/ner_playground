@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=75", "setuptools_scm[toml]>=8.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spacy-ner"
+version = "0.1.0"
+description = "Named Entity Recognition using spaCy"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "ai-mindset", email = "email@example.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "spacy>=3.7.0",
+    "pandas>=2.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pynvim>=0.5.2", # Python client for Neovim
+    "jedi-language-server>=0.43.1", # A language server for Jedi!
+    "ruff>=0.9.3", # An extremely fast Python linter and code formatter, written in Rust
+    "ipython>=8.31.0", # IPython: Productive Interactive Computing
+    "plotext>=5.3.2", # plotext plots directly on terminal
+    "ipdb>=0.13.13", # IPython-enabled pdb
+    "tqdm>=4.67.1", # Fast, Extensible Progress Meter
+]
+models = [
+    "en_core_web_sm",
+    "en_core_web_lg",
+]
+
+[tool.ruff]
+lint.select = ["I", "N", "UP"]
+        # `I`: isort
+        # `N`: pep8-naming
+        # `UP`: pyupgrade
+lint.ignore = ["N803"]
+line-length = 90
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+case-sensitive = true
+known-first-party = ["ner"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.spacy]
+models = {en_core_web_sm = "*"}
