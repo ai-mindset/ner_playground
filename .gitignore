@@ -1,6 +1,7 @@
 .git
 plots/*
 texts/*
+*.whl
 
 # Python
 # Byte-compiled / optimized / DLL files

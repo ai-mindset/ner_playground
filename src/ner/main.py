@@ -3,15 +3,24 @@ on text documents using spaCy. It extracts standard entities, adds custom entity
 combines results, summarizes entity types, and generates visualizations.
 """
 
+# %% [markdown]
+# ## Imports
+
 # %%
 import pandas as pd
 import spacy
 from spacy import displacy
 from spacy.matcher import Matcher
 
+# %% [markdown]
+# ## Main NER pipeline
+# TODO: Break down this pipeline into pure functions for testability and maintainability
+
 
 # %%
-def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
+def perform_ner_analysis(
+    text: str, model_name: str = "en_core_web_sm"
+) -> dict[str, displacy.Doc | pd.DataFrame | str]:
     """
     Perform complete Named Entity Recognition analysis on the provided text.
 
@@ -25,16 +34,17 @@ def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
             - type_summary: DataFrame of entity type counts
             - visualization_html: HTML string of entity visualization
     """
+
     try:
         # 1. Load model
-        nlp = spacy.load(model_name)
+        nlp: displacy.Language = spacy.load(model_name)
     except OSError as e:
         raise ImportError(
             f"Model {model_name} not found. Install it with: python -m spacy download {model_name}"
         )
 
     # 2. Process document
-    doc = nlp(text)
+    doc: displacy.Doc = nlp(text)
 
     # 3. Extract standard entities
     entities = []
@@ -52,17 +62,98 @@ def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
     # 4. Add custom entity patterns
     matcher = Matcher(nlp.vocab)
     custom_patterns = [
-        ("PROGRAMMING_LANG", [[{"LOWER": "python"}], [{"LOWER": "cython"}]]),
+        # Organizations
         (
-            "LIBRARY",
-            [[{"LOWER": "tensorflow"}], [{"LOWER": "pytorch"}], [{"LOWER": "mxnet"}]],
+            "ORG",
+            [
+                [{"LOWER": "who"}],
+                [{"LOWER": "world"}, {"LOWER": "health"}, {"LOWER": "organization"}],
+                [{"LOWER": "ihme"}],
+                [{"LOWER": "fao"}],
+                [{"LOWER": "unep"}],
+                [{"LOWER": "iea"}],
+                [{"LOWER": "nasa"}],
+                [{"LOWER": "health"}, {"LOWER": "effects"}, {"LOWER": "institute"}],
+            ],
+        ),
+        # Research concepts
+        (
+            "RESEARCH_CONCEPT",
+            [
+                [{"LOWER": "energy"}, {"LOWER": "ladder"}],
+                [{"LOWER": "energy"}, {"LOWER": "poverty"}],
+                [{"LOWER": "indoor"}, {"LOWER": "air"}, {"LOWER": "pollution"}],
+                [{"LOWER": "improved"}, {"LOWER": "cook"}, {"LOWER": "stoves"}],
+                [{"LOWER": "particulate"}, {"LOWER": "matter"}],
+                [{"LOWER": {"IN": ["pm2.5", "pm10"]}}],
+            ],
+        ),
+        # Energy sources
+        (
+            "ENERGY_SOURCE",
+            [
+                [{"LOWER": "biomass"}],
+                [{"LOWER": "fuelwood"}],
+                [{"LOWER": "charcoal"}],
+                [{"LOWER": "coal"}],
+                [{"LOWER": "liquefied"}, {"LOWER": "petroleum"}, {"LOWER": "gas"}],
+                [{"LOWER": "crop"}, {"LOWER": "waste"}],
+                [{"LOWER": "dried"}, {"LOWER": "dung"}],
+            ],
+        ),
+        # Health conditions
+        (
+            "HEALTH_CONDITION",
+            [
+                [{"LOWER": "pneumonia"}],
+                [{"LOWER": "copd"}],
+                [
+                    {"LOWER": "chronic"},
+                    {"LOWER": "obstructive"},
+                    {"LOWER": "pulmonary"},
+                    {"LOWER": "disease"},
+                ],
+                [{"LOWER": "lung"}, {"LOWER": "cancer"}],
+                [{"LOWER": "cataracts"}],
+                [{"LOWER": "burns"}],
+                [{"LOWER": "stillbirths"}],
+            ],
+        ),
+        # Geographic regions
+        (
+            "GEOG",
+            [
+                [{"LOWER": "sub-saharan"}, {"LOWER": "africa"}],
+                [{"LOWER": "africa"}],
+                [{"LOWER": "asia"}],
+                [{"LOWER": "latin"}, {"LOWER": "america"}],
+                [{"LOWER": "kenya"}],
+                [{"LOWER": "china"}],
+                [{"LOWER": "india"}],
+                [{"LOWER": "rome"}],
+                [{"LOWER": "delhi"}],
+            ],
+        ),
+        # Measurements
+        (
+            "MEASUREMENT",
+            [
+                [
+                    {"LOWER": "micrograms"},
+                    {"LOWER": "per"},
+                    {"LOWER": "cubic"},
+                    {"LOWER": "metre"},
+                ],
+                [{"TEXT": {"REGEX": "\\d+\\s*µg/m3"}}],
+                [{"TEXT": {"REGEX": "\\d+\\s*gigatons"}}],
+            ],
         ),
     ]
 
     for name, patterns in custom_patterns:
         matcher.add(name, patterns)
 
-    matches = matcher(doc)
+    matches: list[displacy.Span] = matcher(doc)
     custom_entities = []
     for match_id, start, end in matches:
         span = doc[start:end]
@@ -77,7 +168,7 @@ def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
         )
 
     # 5. Combine all entities
-    all_entities = pd.concat(
+    all_entities: pd.DataFrame = pd.concat(
         [pd.DataFrame(entities), pd.DataFrame(custom_entities)]
         if custom_entities
         else [pd.DataFrame(entities)],
@@ -85,11 +176,11 @@ def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
     ).sort_values("Start")
 
     # 6. Summarize by entity type
-    type_summary = all_entities["Type"].value_counts().reset_index()
+    type_summary: pd.DataFrame = all_entities["Type"].value_counts().reset_index()
     type_summary.columns = ["Entity Type", "Count"]
 
     # 7. Generate visualization HTML
-    html = displacy.render(doc, style="ent", page=True)
+    html: str = displacy.render(doc, style="ent", page=True)
 
     return {
         "doc": doc,
@@ -102,12 +193,7 @@ def perform_ner_analysis(text: str, model_name: str = "en_core_web_sm"):
 # %%
 if __name__ == "__main__":
     # Example usage with sample text
-    sample_text = """spaCy is an open-source software library for advanced natural language processing, 
-    written in Python and Cython. The library is published under the MIT license and its main developers 
-    are Matthew Honnibal and Ines Montani, the founders of Explosion. Unlike NLTK, spaCy focuses on 
-    providing software for production usage. It supports deep learning workflows using TensorFlow, PyTorch, 
-    and its own machine learning library Thinc."""
-
+    sample_text = open("texts/ourworldindata.md").read()
     # Run the analysis
     results = perform_ner_analysis(sample_text)
 
